@@ -25,7 +25,7 @@ Findet sie etwas nicht eindeutig, lädt sie nicht und schreibt den Grund in
 
 Offline-Test: `scantest.exe <Pfad>\empire.retail.dll [attila]`.
 
-`luaopen_troymod_native` gibt vier Funktionen zurück:
+`luaopen_troymod_native` gibt sieben Funktionen zurück:
 
 - `log(text)` – schreibt in `troymod_native.log`.
 - `enable_build_events()` – danach feuert `BuildingConstructionIssuedByPlayer` auch für KI-Fraktionen
@@ -33,6 +33,12 @@ Offline-Test: `scantest.exe <Pfad>\empire.retail.dll [attila]`.
   gefunden (`build_hook.h`); fehlt etwas, bleibt alles unverändert und das Log nennt den Grund.
 - `build_dump(tag)` – Speicherabbild des zuletzt begonnenen Gebäude-Eintrags (Fehlersuche).
 - `last_building()` – im Ereignis aufgerufen: Schlüssel der begonnenen Gebäudestufe, z. B. `pel_port_2`.
+- `create_component(parent, name, layout)` – lädt eine eigene Layout-Datei (z. B. `"ui/troymod/trade_ship_panel"`)
+  als Kind von `parent` (Adresse aus `Find` oder ein `UIComponent`); danach `parent:Find(name)`.
+  Gibt `true` oder `nil, Fehler` zurück. Rome 2 hat dafür keine Lua-Methode (Attila: `CreateComponent`),
+  die Engine-Funktion ist aber da; gefunden über den Text `"CreateFromLayout"` (`ui_create.h`).
+- `block_panels("units_panel", ...)` – das Spiel öffnet Panels mit diesen Namen nicht mehr (ohne Namen: wieder alle).
+  Hook auf den Panel-Öffner der Kampagne (`panel_hook.h`). `trace_panels(true)` schreibt jedes geöffnete Panel ins Log.
 
 TroyMod nutzt das, damit auch die KI Holz, Bronze und Stein bei Baubeginn bezahlt.
 Die DLL wirkt nur, wenn ein TroyMod-Skript sie lädt.

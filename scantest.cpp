@@ -2,6 +2,8 @@
 // functions with known addresses: Rome 2 build 69ce2041 (verified in game) or, with "attila", the
 // Attila DLL (read from its disassembly) as a differently compiled build. Usage: scantest <dll> [attila]
 #include "build_hook.h"
+#include "ui_create.h"
+#include "panel_hook.h"
 
 int main(int argc, char** argv) {
     if (argc < 2) return std::printf("Aufruf: scantest <empire.retail.dll>\n"), 2;
@@ -31,6 +33,26 @@ int main(int argc, char** argv) {
     std::printf(bad ? "%d falsch\n" : "alle %d richtig\n", bad ? bad : static_cast<int>(std::size(rows)));
     // Bau-Start-Funktion und Mensch-Pruefung (Rome 2: 8C7E00 / 8C812A aus dem Disassembly)
     buildhook::Found f;
+    // Layout-Erzeuger (Rome 2: 1046C70 / 10470F0, Attila: 13A0680 / 13A09E0 aus dem Disassembly)
+    uicreate::Found u;
+    if (!uicreate::find(h, u, err, sizeof err)) {
+        std::printf("Layout: FEHLER %s\n", err);
+        ++bad;
+    } else {
+        const bool uok = attila ? rva(u.loader) == 0x13A0680 && rva(u.create) == 0x13A09E0
+                                : rva(u.loader) == 0x1046C70 && rva(u.create) == 0x10470F0;
+        std::printf("Layout-Lader %06X, Erzeuger %06X %s\n", rva(u.loader), rva(u.create), uok ? "ok" : "FALSCH");
+        bad += !uok;
+    }
+    // Panel-Oeffner (Rome 2: 10F04E0 aus dem Disassembly; Attila darf fehlen)
+    if (BYTE* ph = panelhook::find(h, err, sizeof err)) {
+        const bool pok = attila || rva(ph) == 0x10F04E0;
+        std::printf("Panel-Oeffner %06X %s\n", rva(ph), pok ? "ok" : "FALSCH");
+        bad += !pok;
+    } else {
+        std::printf("Panel-Oeffner: FEHLER %s\n", err);
+        bad += !attila;
+    }
     if (!buildhook::findBuildStart(h, f, err, sizeof err)) {
         std::printf("Bau-Start: FEHLER %s\n", err);
         return attila ? (bad ? 1 : 0) : 1;  // Attila may differ (fails safe), Rome 2 must work

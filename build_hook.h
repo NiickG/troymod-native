@@ -50,11 +50,13 @@ inline bool findBuildStart(HMODULE game, Found& out, char* err, size_t errSize) 
     BYTE* f = use;
     while (f > use - 0x800 && !(f[-1] == 0xCC && f[-2] == 0xCC)) --f;
     static const BYTE kPrologue[] = {0x83, 0xEC, 0x2C, 0x53, 0x8B, 0xD9};
-    if (std::memcmp(f, kPrologue, sizeof kPrologue) != 0) return sprintf_s(err, errSize, "Funktionsanfang unerwartet"), false;
+    // E9 rel32 90 = already hooked by an earlier copy of this DLL (dev reload loads a fresh copy): hook again
+    const bool hooked = f[0] == 0xE9 && f[5] == 0x90;
+    if (!hooked && std::memcmp(f, kPrologue, sizeof kPrologue) != 0) return sprintf_s(err, errSize, "Funktionsanfang unerwartet"), false;
     // last "cmp byte ptr [eax+disp32], 0; je rel8" before the vtable use = human check
     BYTE* jump = nullptr;
     for (BYTE* p = f; p + 9 <= use; ++p)
-        if (p[0] == 0x80 && p[1] == 0xB8 && p[6] == 0x00 && p[7] == 0x74) jump = p + 7;
+        if (p[0] == 0x80 && p[1] == 0xB8 && p[6] == 0x00 && (p[7] == 0x74 || (hooked && p[7] == 0x90 && p[8] == 0x90))) jump = p + 7;
     if (!jump) return sprintf_s(err, errSize, "Mensch-Pruefung fehlt"), false;
     out.start = f;
     out.humanJump = jump;
