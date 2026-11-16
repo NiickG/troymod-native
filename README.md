@@ -25,7 +25,17 @@ Findet sie etwas nicht eindeutig, lädt sie nicht und schreibt den Grund in
 
 Offline-Test: `scantest.exe <Pfad>\empire.retail.dll [attila]`.
 
-Derzeit stellt sie nur eine Test-Funktion bereit: `log(text)` schreibt in `troymod_native.log`.
+`luaopen_troymod_native` gibt vier Funktionen zurück:
+
+- `log(text)` – schreibt in `troymod_native.log`.
+- `enable_build_events()` – danach feuert `BuildingConstructionIssuedByPlayer` auch für KI-Fraktionen
+  (das Spiel prüft sonst, ob ein Mensch baut). Die Bau-Funktion wird wie die Lua-Funktionen per Suche
+  gefunden (`build_hook.h`); fehlt etwas, bleibt alles unverändert und das Log nennt den Grund.
+- `build_dump(tag)` – Speicherabbild des zuletzt begonnenen Gebäude-Eintrags (Fehlersuche).
+- `last_building()` – im Ereignis aufgerufen: Schlüssel der begonnenen Gebäudestufe, z. B. `pel_port_2`.
+
+TroyMod nutzt das, damit auch die KI Holz, Bronze und Stein bei Baubeginn bezahlt.
+Die DLL wirkt nur, wenn ein TroyMod-Skript sie lädt.
 
 Nur Einzelspieler.
 

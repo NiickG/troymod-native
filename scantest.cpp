@@ -1,7 +1,7 @@
 // Offline check of findLuaApi(): maps empire.retail.dll without running it and compares the found
 // functions with known addresses: Rome 2 build 69ce2041 (verified in game) or, with "attila", the
 // Attila DLL (read from its disassembly) as a differently compiled build. Usage: scantest <dll> [attila]
-#include "lua_api.h"
+#include "build_hook.h"
 
 int main(int argc, char** argv) {
     if (argc < 2) return std::printf("Aufruf: scantest <empire.retail.dll>\n"), 2;
@@ -29,5 +29,14 @@ int main(int argc, char** argv) {
         std::printf("%-20s %06X %s\n", r.name, rva(r.fn), ok ? "ok" : "FALSCH");
     }
     std::printf(bad ? "%d falsch\n" : "alle %d richtig\n", bad ? bad : static_cast<int>(std::size(rows)));
+    // Bau-Start-Funktion und Mensch-Pruefung (Rome 2: 8C7E00 / 8C812A aus dem Disassembly)
+    buildhook::Found f;
+    if (!buildhook::findBuildStart(h, f, err, sizeof err)) {
+        std::printf("Bau-Start: FEHLER %s\n", err);
+        return attila ? (bad ? 1 : 0) : 1;  // Attila may differ (fails safe), Rome 2 must work
+    }
+    const bool bok = attila || (rva(f.start) == 0x8C7E00 && rva(f.humanJump) == 0x8C812A);
+    std::printf("Bau-Start %06X, Mensch-Sprung %06X %s\n", rva(f.start), rva(f.humanJump), bok ? "ok" : "FALSCH");
+    bad += !bok;
     return bad ? 1 : 0;
 }
