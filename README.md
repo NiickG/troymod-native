@@ -16,10 +16,14 @@ Entfernen: die Datei löschen.
 
 TroyMod lädt sie aus Lua mit
 `package.loadlib("troymod_native.dll", "luaopen_troymod_native")`.
-Rome 2 exportiert seine Lua-Funktionen nicht, deshalb ruft die DLL sie über Adressen in
-`empire.retail.dll` auf. Vorher prüft sie die Build-Kennung des Spiels; passt sie nicht
-(z. B. nach einem Spiel-Patch), lädt sie nicht und schreibt das in `troymod_native.log` –
-das Spiel stürzt dabei nicht ab.
+Rome 2 exportiert seine Lua-Funktionen nicht. Die DLL sucht sie beim Laden selbst in
+`empire.retail.dll` (`lua_api.h`): ausgehend vom Text `"loadlib"` in Luas Funktionstabelle und
+`"LOADLIB: "` folgt sie den Aufrufen in Luas eigenem Code. Das übersteht Spiel-Patches, die Code
+verschieben; getestet mit Rome 2 (Steam) und – als anders kompiliertes Gegenstück – Attila.
+Findet sie etwas nicht eindeutig, lädt sie nicht und schreibt den Grund in
+`troymod_native.log` – das Spiel stürzt dabei nicht ab.
+
+Offline-Test: `scantest.exe <Pfad>\empire.retail.dll [attila]`.
 
 Derzeit stellt sie nur eine Test-Funktion bereit: `log(text)` schreibt in `troymod_native.log`.
 
